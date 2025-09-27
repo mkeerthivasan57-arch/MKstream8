@@ -1,0 +1,373 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Admin - MKstream v35 (Full Editor)</title>
+<link rel="stylesheet" href="style.css">
+<style>
+/* Admin-specific styles */
+.admin-wrap{max-width:1200px;margin:12px auto;padding:16px;color:#eef8ff;background:linear-gradient(180deg,#071022,#071b2b);border-radius:10px}
+h1{margin:0 0 8px 0}
+.tabs{display:flex;gap:8px;margin-bottom:12px}
+.tab-btn{padding:8px 12px;border-radius:8px;background:#0b2a44;color:#dff3ff;cursor:pointer;border:0}
+.tab-btn.active{background:#0b84ff;color:#001;font-weight:700}
+.panel{display:none;background:rgba(255,255,255,0.02);padding:12px;border-radius:8px}
+.panel.show{display:block}
+.row{display:flex;gap:12px}
+.col{flex:1}
+.small{color:#9fb3c8;font-size:13px}
+.upload-link{display:inline-block;margin-left:8px;padding:8px 12px;border-radius:8px;background:#0b84ff;color:#001;text-decoration:none;font-weight:600;border:1px solid #0077ff}
+.btn{padding:8px 10px;border-radius:8px;border:0;background:#0b84ff;color:#001;cursor:pointer}
+.list{background:#042034;padding:8px;border-radius:6px;margin-top:8px}
+.item{padding:6px;border-radius:6px;background:#071924;margin-bottom:6px}
+.label{font-weight:600}
+textarea.code{width:100%;height:260px;background:#02161f;color:#dff3ff;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.04);font-family:monospace;font-size:13px}
+.form-row{margin-top:8px}
+select,input{padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:#071924;color:inherit;width:100%}
+.preview-iframe{width:100%;height:500px;border:1px solid rgba(255,255,255,0.06);border-radius:6px;margin-top:8px;background:#000}
+.controls{margin-top:8px;display:flex;gap:8px;align-items:center}
+</style>
+</head>
+<body style="background:#001123;color:#eaf6ff;font-family:Inter,Arial,Helvetica,sans-serif">
+<div class="admin-wrap">
+  <h1>MKstream Admin — Full Editor (v35)</h1>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="webManager">Web Manager</button>
+    <button class="tab-btn" data-tab="adsManager">Ads Manager</button>
+    <button class="tab-btn" data-tab="webEditor">Web Editor</button>
+    <button class="tab-btn" data-tab="settingsTab">Settings</button>
+  </div>
+
+  <!-- Web Manager Panel (existing) -->
+  <div id="webManager" class="panel show">
+    <h2>Web Manager</h2>
+    <p class="small">Manage series/episodes (as before). Use Upload to apply to site.</p>
+    <div class="row">
+      <div class="col">
+        <label class="label">Series Title</label>
+        <input id="seriesTitle" placeholder="Series title"/>
+        <label class="label form-row">Thumbnail URL</label>
+        <input id="thumbUrl" placeholder="https://..."/>
+        <label class="label form-row">Sample Video Type</label>
+        <select id="sampleType"><option value="youtube">YouTube</option><option value="dailymotion">Dailymotion</option></select>
+        <div class="controls">
+          <button class="btn" id="addSeries">Save</button>
+          <a href="#" class="upload-link" id="uploadWeb" onclick="uploadWeb();return false;">Upload</a>
+        </div>
+      </div>
+      <div class="col">
+        <h3>Existing Series (local)</h3>
+        <div id="seriesList" class="list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ads Manager Panel -->
+  <div id="adsManager" class="panel">
+    <h2>Ads Manager</h2>
+    <p class="small">Create ads, schedule, placement.</p>
+    <div class="row">
+      <div class="col">
+        <label class="label">Placement</label>
+        <select id="placement"><option value="top">Homepage Top</option><option value="inline">Inline (player)</option><option value="sidebar">Sidebar</option></select>
+        <label class="label form-row">Ad Content (HTML/text)</label>
+        <textarea id="adContent" rows="4"></textarea>
+        <label class="label form-row">Start (YYYY-MM-DD HH:MM)</label>
+        <input id="adStart" placeholder="2025-09-27 00:00"/>
+        <label class="label form-row">End (YYYY-MM-DD HH:MM)</label>
+        <input id="adEnd" placeholder="2025-10-01 00:00"/>
+        <div class="controls">
+          <button class="btn" id="saveAd">Save</button>
+          <a href="#" class="upload-link" id="uploadAds" onclick="uploadAds();return false;">Upload</a>
+        </div>
+      </div>
+      <div class="col">
+        <h3>Saved Ads</h3>
+        <div id="adsList" class="list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Web Editor Panel -->
+  <div id="webEditor" class="panel">
+    <h2>Web Editor</h2>
+    <p class="small">Two modes: <strong>Code Editor</strong> (edit full page HTML/CSS/JS) and <strong>Visual UI Editor</strong> (Which / Where / What) to add/move/remove elements.</p>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <button class="btn" id="modeCodeBtn">Code Editor</button>
+      <button class="btn" id="modeUIBtn">UI Form Mode</button>
+      <button class="btn" id="modeVisualBtn">Visual Editor</button>
+    </div>
+
+    <!-- Code Editor -->
+    <div id="codeEditor" class="tabSection" style="margin-top:12px">
+      <label class="label">Select Page to Edit</label>
+      <select id="codePageSelect"><option value="index.html">index.html</option><option value="category.html">category.html</option><option value="player.html">player.html</option></select>
+      <div class="form-row">
+        <textarea id="codeArea" class="code"></textarea>
+      </div>
+      <div class="controls">
+        <button class="btn" id="saveCode">Save Draft</button>
+        <a href="#" class="upload-link" id="uploadCode" onclick="uploadCode();return false;">Upload</a>
+      </div>
+    </div>
+
+    <!-- UI Form Mode -->
+    <div id="uiForm" class="tabSection" style="display:none;margin-top:12px">
+      <label class="label">Select Page</label>
+      <select id="uiPageSelect"><option value="index.html">index.html</option><option value="category.html">category.html</option><option value="player.html">player.html</option></select>
+      <label class="label form-row">Section Title</label>
+      <input id="uiTitle" placeholder="Section title"/>
+      <label class="label form-row">Section Content (HTML allowed)</label>
+      <textarea id="uiContent" rows="6"></textarea>
+      <div class="controls">
+        <button class="btn" id="saveUI">Save Draft</button>
+        <a href="#" class="upload-link" id="uploadUI" onclick="uploadUI();return false;">Upload</a>
+      </div>
+    </div>
+
+    <!-- Visual Editor -->
+    <div id="visualEditor" class="tabSection" style="display:none;margin-top:12px">
+      <div class="row">
+        <div class="col">
+          <label class="label">Which Page</label>
+          <select id="visPage"><option value="index.html">index.html</option><option value="category.html">category.html</option><option value="player.html">player.html</option></select>
+
+          <label class="label form-row">Where on Page</label>
+          <select id="visPosition"><option value="header">Header</option><option value="before-content">Before Content</option><option value="after-content">After Content</option><option value="footer">Footer</option></select>
+
+          <label class="label form-row">What Element</label>
+          <select id="visElementType"><option value="text">Text</option><option value="image">Image</option><option value="video">Video Embed</option><option value="ad">Ad Slot</option></select>
+
+          <label class="label form-row">Content (text or URL)</label>
+          <input id="visContent" placeholder="Text or image/video URL or HTML snippet"/>
+
+          <div class="controls">
+            <button class="btn" id="addVis">Add</button>
+            <button class="btn" id="editVis">Edit Selected</button>
+            <button class="btn" id="removeVis">Remove Selected</button>
+            <a href="#" class="upload-link" id="uploadVisual" onclick="uploadVisual();return false;">Upload</a>
+          </div>
+        </div>
+        <div class="col">
+          <h3>Existing Elements for selected page</h3>
+          <div id="visList" class="list"></div>
+        </div>
+      </div>
+
+      <h3 style="margin-top:12px">Live Preview</h3>
+      <iframe id="previewFrame" class="preview-iframe"></iframe>
+      <div class="small">Use Upload to apply edits to the preview (local preview via localStorage).</div>
+    </div>
+  </div>
+
+  <!-- Settings Panel -->
+  <div id="settingsTab" class="panel">
+    <h2>Settings</h2>
+    <label class="label">Telegram Link</label>
+    <input id="telegramLink" placeholder="https://t.me/yourchannel"/>
+    <div class="controls">
+      <button class="btn" id="saveSettings">Save</button>
+      <a href="#" class="upload-link" id="uploadSettings" onclick="uploadSettings();return false;">Upload</a>
+    </div>
+  </div>
+
+  <hr style="margin-top:18px;border-color:rgba(255,255,255,0.04)">
+  <div class="small">Backups of overwritten files are stored in the package when this build was created.</div>
+</div>
+
+<script>
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click', ()=>{
+  document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  const tab = b.getAttribute('data-tab');
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('show'));
+  document.getElementById(tab).classList.add('show');
+}));
+
+// Mode buttons
+document.getElementById('modeCodeBtn').addEventListener('click', ()=>{ showMode('code'); });
+document.getElementById('modeUIBtn').addEventListener('click', ()=>{ showMode('ui'); });
+document.getElementById('modeVisualBtn').addEventListener('click', ()=>{ showMode('visual'); });
+
+function showMode(m){
+  document.getElementById('codeEditor').style.display = m==='code'? 'block':'none';
+  document.getElementById('uiForm').style.display = m==='ui'? 'block':'none';
+  document.getElementById('visualEditor').style.display = m==='visual'? 'block':'none';
+}
+
+// Utilities
+function loadJSON(key){ try{ return JSON.parse(localStorage.getItem(key)||'{}'); }catch(e){ return {}; } }
+function saveJSON(key,val){ localStorage.setItem(key, JSON.stringify(val)); }
+
+// --- Web Manager ---
+function renderSeries(){
+  const arr = JSON.parse(localStorage.getItem('mk_series')||'[]');
+  const el = document.getElementById('seriesList');
+  el.innerHTML = arr.map((s,i)=>`<div class="item"><strong>${s.title}</strong><div class="small">thumb: ${s.thumb||'n/a'}</div></div>`).join('') || '<div class="small">No series</div>';
+}
+document.getElementById('addSeries').addEventListener('click', ()=>{
+  const title = document.getElementById('seriesTitle').value.trim();
+  if(!title){ alert('Enter title'); return; }
+  const arr = JSON.parse(localStorage.getItem('mk_series')||'[]');
+  arr.push({title,thumb:document.getElementById('thumbUrl').value||'',type:document.getElementById('sampleType').value,created:new Date().toISOString()});
+  localStorage.setItem('mk_series', JSON.stringify(arr));
+  renderSeries();
+  alert('Saved (draft). Use Upload to apply to site preview.');
+});
+function uploadWeb(){ localStorage.setItem('mk_last_applied_web', new Date().toISOString()); alert('Web Manager uploaded. Preview pages will reflect changes.'); window.dispatchEvent(new Event('storage')); }
+
+// --- Ads Manager ---
+function renderAds(){
+  const ads = JSON.parse(localStorage.getItem('mk_ads_all')||'[]');
+  const el = document.getElementById('adsList');
+  el.innerHTML = ads.map((a,i)=>`<div class="item"><strong>${a.placement}</strong><div class="small">${a.content||''}</div><div class="small">Start: ${a.start||''} End: ${a.end||''}</div></div>`).join('')||'<div class="small">No ads</div>';
+}
+document.getElementById('saveAd').addEventListener('click', ()=>{
+  const placement = document.getElementById('placement').value;
+  const content = document.getElementById('adContent').value;
+  const start = document.getElementById('adStart').value;
+  const end = document.getElementById('adEnd').value;
+  const ads = JSON.parse(localStorage.getItem('mk_ads_all')||'[]');
+  ads.push({placement,content,start,end});
+  localStorage.setItem('mk_ads_all', JSON.stringify(ads));
+  renderAds();
+  alert('Ad saved (draft). Use Upload to apply.');
+});
+function uploadAds(){ localStorage.setItem('mk_last_applied_ads', new Date().toISOString()); alert('Ads uploaded. Preview pages will reflect changes.'); window.dispatchEvent(new Event('storage')); }
+
+// --- Settings ---
+document.getElementById('saveSettings').addEventListener('click', ()=>{
+  const tg = document.getElementById('telegramLink').value.trim();
+  localStorage.setItem('mk_telegram', tg);
+  alert('Settings saved (draft). Use Upload to apply.');
+});
+function uploadSettings(){ localStorage.setItem('mk_last_applied_settings', new Date().toISOString()); alert('Settings uploaded. Preview pages will reflect changes.'); window.dispatchEvent(new Event('storage')); }
+
+// --- Code Editor ---
+function loadCodeToEditor(){
+  const page = document.getElementById('codePageSelect').value;
+  fetch(page).then(r=>r.text()).then(t=>{ document.getElementById('codeArea').value = t; });
+}
+document.getElementById('codePageSelect').addEventListener('change', loadCodeToEditor);
+document.getElementById('saveCode').addEventListener('click', ()=>{
+  const page = document.getElementById('codePageSelect').value;
+  const content = document.getElementById('codeArea').value;
+  const drafts = JSON.parse(localStorage.getItem('mk_code_drafts')||'{}');
+  drafts[page] = content;
+  localStorage.setItem('mk_code_drafts', JSON.stringify(drafts));
+  alert('Code draft saved. Use Upload to apply to preview.');
+});
+function uploadCode(){
+  const page = document.getElementById('codePageSelect').value;
+  const drafts = JSON.parse(localStorage.getItem('mk_code_drafts')||'{}');
+  if(!drafts[page]){ if(confirm('No draft found. Do you want to copy current preview content into draft?')){ loadCodeToEditor(); } return; }
+  // Save draft into mk_web_edits as a "fullpage" replace
+  const edits = JSON.parse(localStorage.getItem('mk_web_edits')||'{}');
+  edits[page] = edits[page]||[];
+  // mark a special fullpage edit
+  edits[page].push({type:'fullpage_replace',content:drafts[page],id:'full_'+Date.now()});
+  localStorage.setItem('mk_web_edits', JSON.stringify(edits));
+  localStorage.setItem('mk_last_applied_web', new Date().toISOString());
+  alert('Code uploaded/applied to preview. Note: full page replace stored as draft-like edit.');
+  window.dispatchEvent(new Event('storage'));
+}
+
+// --- UI Form Mode ---
+document.getElementById('saveUI').addEventListener('click', ()=>{
+  const page = document.getElementById('uiPageSelect').value;
+  const title = document.getElementById('uiTitle').value;
+  const content = document.getElementById('uiContent').value;
+  if(!title || !content){ alert('Title and content required'); return; }
+  const edits = JSON.parse(localStorage.getItem('mk_web_edits')||'{}');
+  edits[page] = edits[page]||[];
+  edits[page].push({type:'section',position:'after-content',title,content,id:'ui_'+Date.now()});
+  localStorage.setItem('mk_web_edits', JSON.stringify(edits));
+  alert('UI section saved (draft). Use Upload to apply.');
+});
+function uploadUI(){ localStorage.setItem('mk_last_applied_web', new Date().toISOString()); alert('UI uploaded. Preview pages will reflect changes.'); window.dispatchEvent(new Event('storage')); }
+
+// --- Visual Editor ---
+function renderVisList(){
+  const page = document.getElementById('visPage').value;
+  const edits = JSON.parse(localStorage.getItem('mk_web_edits')||'{}');
+  const list = edits[page]||[];
+  const out = list.map((e,i)=>`<div class="item" data-idx="${i}"><strong>${e.type}</strong> - ${e.position||''} - ${e.content||e.title||e.html||''}</div>`).join('')||'<div class="small">No elements</div>';
+  document.getElementById('visList').innerHTML = out;
+  // attach click handlers to select
+  document.querySelectorAll('#visList .item').forEach(it=>it.addEventListener('click', ()=>{
+    document.querySelectorAll('#visList .item').forEach(x=>x.style.background='');
+    it.style.background='#083546';
+    it.classList.add('selected');
+  }));
+}
+document.getElementById('visPage').addEventListener('change', renderVisList);
+document.getElementById('addVis').addEventListener('click', ()=>{
+  const page = document.getElementById('visPage').value;
+  const pos = document.getElementById('visPosition').value;
+  const type = document.getElementById('visElementType').value;
+  const content = document.getElementById('visContent').value;
+  const edits = JSON.parse(localStorage.getItem('mk_web_edits')||'{}');
+  edits[page] = edits[page]||[];
+  edits[page].push({type,position:pos,content,created:Date.now(),id:'vis_'+Date.now()});
+  localStorage.setItem('mk_web_edits', JSON.stringify(edits));
+  renderVisList();
+  alert('Element added (draft). Use Upload to apply to preview.');
+});
+document.getElementById('removeVis').addEventListener('click', ()=>{
+  const sel = document.querySelector('#visList .item.selected');
+  if(!sel){ alert('Select an element first'); return; }
+  const idx = parseInt(sel.getAttribute('data-idx'));
+  const page = document.getElementById('visPage').value;
+  const edits = JSON.parse(localStorage.getItem('mk_web_edits')||'{}');
+  edits[page].splice(idx,1);
+  localStorage.setItem('mk_web_edits', JSON.stringify(edits));
+  renderVisList();
+  alert('Element removed (draft). Use Upload to apply.');
+});
+document.getElementById('editVis').addEventListener('click', ()=>{
+  const sel = document.querySelector('#visList .item.selected');
+  if(!sel){ alert('Select an element first'); return; }
+  const idx = parseInt(sel.getAttribute('data-idx'));
+  const page = document.getElementById('visPage').value;
+  const edits = JSON.parse(localStorage.getItem('mk_web_edits')||'{}');
+  const el = edits[page][idx];
+  document.getElementById('visContent').value = el.content || el.title || '';
+  document.getElementById('visElementType').value = el.type || 'text';
+  document.getElementById('visPosition').value = el.position || 'after-content';
+  // replace on save by adding a new one and removing old
+  if(confirm('After editing in fields press Add to replace the selected element?')){
+    edits[page].splice(idx,1);
+    localStorage.setItem('mk_web_edits', JSON.stringify(edits));
+    renderVisList();
+  }
+});
+
+function uploadVisual(){ localStorage.setItem('mk_last_applied_web', new Date().toISOString()); alert('Visual edits uploaded. Preview will update.'); window.dispatchEvent(new Event('storage')); }
+
+// Initial render
+renderSeries();
+renderAds();
+renderVisList();
+loadCodeToEditor();
+
+// Preview iframe loading and update on storage events
+const previewFrame = document.getElementById('previewFrame');
+function loadPreview(){
+  const page = document.getElementById('visPage').value;
+  previewFrame.src = page;
+}
+document.getElementById('visPage').addEventListener('change', loadPreview);
+window.addEventListener('storage', (e)=>{
+  // trigger reload of preview iframe to reflect edits applied by Upload (localStorage-based)
+  try{ previewFrame.contentWindow.location.reload(true); }catch(e){ previewFrame.src = previewFrame.src; }
+});
+
+// Ensure preview loads initial page
+loadPreview();
+</script>
+</body>
+</html>

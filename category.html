@@ -1,0 +1,84 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MKstream - Category</title>
+<meta name="description" id="meta-desc-cat" content="Category page">
+<link rel="stylesheet" href="style.css">
+<script defer src="script.js"></script>
+</head>
+<body class="theme-dark">
+  <div class="site-root">
+    <header class="site-header">
+      <div class="left">
+        <button id="hamburger-cat" class="hamburger" aria-label="menu" aria-expanded="false"><span></span><span></span><span></span></button>
+        <div class="brand" onclick="location.href='index.html'">MKstream</div>
+      </div>
+      <nav class="categories-desktop" id="categories-desktop-cat"></nav>
+      <div class="right"><button id="search-toggle-cat" class="icon-btn">🔍</button><a class="admin-pill" href="admin.html">Admin</a></div>
+    </header>
+
+    <aside id="sidebar-cat" class="sidebar" aria-hidden="true">
+      <div class="sidebar-top"><div class="brand">MKstream</div><button id="sidebar-close-cat" class="close-x">✖</button></div>
+      <div id="sidebar-cats-cat" class="sidebar-cats"></div>
+    </aside>
+
+    <main class="container">
+      <h1 id="category-title">Category</h1>
+      <div id="category-grid" class="grid"></div>
+      <div class="pager center"><button id="category-load-more" class="btn">Load more</button></div>
+    </main>
+
+    <footer class="site-footer"><div>© <span id="year-cat"></span> MKstream</div></footer>
+  </div>
+
+<!-- mk_apply_edits hook -->
+<script>
+function mk_apply_edits(){
+  try{
+    const edits = JSON.parse(localStorage.getItem('mk_web_edits')||'{}');
+    const page = location.pathname.split('/').pop() || 'index.html';
+    const list = edits[page] || [];
+    // Apply each edit by position
+    list.forEach(e=>{
+      try{
+        if(e.type==='fullpage_replace' && e.content){
+          // full page replace not applied on client for safety
+        } else if(e.type==='section'){
+          const node = document.createElement('section');
+          node.innerHTML = '<h3>'+ (e.title||'') +'</h3>' + (e.content||'');
+          document.getElementById('mk_main')?.appendChild(node);
+        } else if(e.type==='text' || e.type==='ad'){
+          const node = document.createElement('div'); node.className='mk-edit-'+e.type; node.innerHTML = e.content || '';
+          if(e.position==='header') document.getElementById('mk_header')?.appendChild(node);
+          else if(e.position==='before-content') document.getElementById('mk_main')?.insertBefore(node, document.getElementById('mk_main').firstChild);
+          else if(e.position==='after-content') document.getElementById('mk_main')?.appendChild(node);
+          else if(e.position==='footer') document.getElementById('mk_footer')?.appendChild(node);
+        } else if(e.type==='image'){
+          const img = document.createElement('img'); img.src = e.content;
+          if(e.position==='header') document.getElementById('mk_header')?.appendChild(img);
+          else if(e.position==='footer') document.getElementById('mk_footer')?.appendChild(img);
+          else document.getElementById('mk_main')?.appendChild(img);
+        } else if(e.type==='video'){
+          const iframe = document.createElement('iframe'); iframe.src = e.content; iframe.width='100%'; iframe.height='280'; iframe.allow='autoplay; encrypted-media'; iframe.style.border='0';
+          document.getElementById('mk_main')?.appendChild(iframe);
+        }
+      }catch(err){ console.error('mk apply error',err); }
+    });
+    // Telegram link
+    const tg = localStorage.getItem('mk_telegram')||'';
+    if(tg){
+      const el = document.createElement('div'); el.className='mk-telegram'; el.innerHTML = '<a href="'+tg+'" target="_blank">Open Telegram</a>';
+      document.getElementById('mk_footer')?.appendChild(el);
+    }
+  }catch(e){ console.error(e); }
+}
+document.addEventListener('DOMContentLoaded', mk_apply_edits);
+window.addEventListener('storage', function(e){ if(e.key && e.key.startsWith('mk_')){ try{ mk_apply_edits(); }catch(err){} } });
+</script>
+<!-- end mk_apply_edits hook -->
+
+</body>
+</html>
